@@ -1,0 +1,159 @@
+{% extends "admin_base.html" %}
+
+{% block title %}{% if mode == 'new' %}Nueva prenda{% else %}Editar prenda{% endif %} · URBANOX{% endblock %}
+
+{% block admin_content %}
+{% set focus_x = row_get(product, 'image_focus_x', 50) if product else 50 %}
+{% set focus_y = row_get(product, 'image_focus_y', 50) if product else 50 %}
+<main id="contenido" class="section">
+  <div class="wrap">
+    <a class="muted small" href="{{ url_for('main.admin_inventory') }}">← Inventario</a>
+    <h1 class="page-title admin-title" style="margin-top:0.85rem;">
+      {% if mode == 'new' %}Nueva prenda{% else %}Editar prenda{% endif %}
+    </h1>
+    <p class="muted small admin-form-lead">
+      Nombre, stock y precio de venta. Si la publicás, aparece en el catálogo.
+    </p>
+
+    <form method="post" class="form-layout" enctype="multipart/form-data" data-product-form>
+      <div class="panel">
+        <div class="form-grid">
+          <label>
+            <span>Nombre</span>
+            <input name="name" required value="{{ product['name'] if product else '' }}" placeholder="Ej. Camisa Oversize Negro" data-product-name>
+          </label>
+          <label>
+            <span>Categoría</span>
+            <input name="category" list="category-suggestions" value="{{ product['category'] if product and product['category'] else 'General' }}">
+            <datalist id="category-suggestions">
+              <option value="Camisas">
+              <option value="Pantalones">
+              <option value="Abrigos">
+              <option value="Accesorios">
+              <option value="Zapatos">
+            </datalist>
+          </label>
+          <label>
+            <span>Color</span>
+            <input name="color" value="{{ product['color'] if product else '' }}">
+          </label>
+          <label>
+            <span>Talla</span>
+            <input name="size" value="{{ product['size'] if product else '' }}" placeholder="S, M, L, 32...">
+          </label>
+          <label>
+            <span>Precio de venta (COP)</span>
+            <input type="number" step="1" min="1" name="price" required value="{{ product['price'] if product else '' }}" placeholder="Ej. 89000">
+          </label>
+          <label>
+            <span>Stock</span>
+            <input type="number" min="0" name="stock" required value="{{ product['stock'] if product else '0' }}">
+          </label>
+          <label>
+            <span>SKU</span>
+            <input name="sku" value="{{ product['sku'] if product and product['sku'] else '' }}" placeholder="Opcional">
+          </label>
+        </div>
+
+        <div class="image-picker" style="margin-top:1rem;">
+          <span>Imagen de la prenda</span>
+          <div class="image-picker-row">
+            <input
+              type="file"
+              name="image_file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              data-image-file
+              id="product-image-file"
+            >
+            <label class="btn btn-ghost btn-sm" for="product-image-file">Elegir imagen</label>
+            <span class="file-name" data-image-filename>Ningún archivo elegido</span>
+          </div>
+          <details>
+            <summary>O pegar URL de imagen</summary>
+            <label>
+              <span class="visually-hidden">URL de imagen</span>
+              <input
+                name="image_url"
+                data-image-url
+                placeholder="https://... o /static/..."
+                value="{{ product['image_url'] if product else '' }}"
+              >
+            </label>
+          </details>
+        </div>
+
+        <div class="image-focus-controls" data-image-focus-controls>
+          <p class="image-focus-title">Encuadre en producción</p>
+          <p class="muted small">Arrastrá el punto en la vista previa o usá los controles para centrar la cara / el detalle.</p>
+          <input type="hidden" name="image_focus_x" value="{{ focus_x }}" data-focus-x>
+          <input type="hidden" name="image_focus_y" value="{{ focus_y }}" data-focus-y>
+          <label>
+            <span>Horizontal</span>
+            <input type="range" min="0" max="100" value="{{ focus_x }}" data-focus-x-range>
+          </label>
+          <label>
+            <span>Vertical</span>
+            <input type="range" min="0" max="100" value="{{ focus_y }}" data-focus-y-range>
+          </label>
+          <button class="btn btn-ghost btn-sm" type="button" data-focus-reset>Centrar</button>
+        </div>
+
+        <label style="margin-top:1rem;">
+          <span>Descripción</span>
+          <textarea name="description" rows="4" placeholder="Material, corte, detalles...">{{ product['description'] if product else '' }}</textarea>
+        </label>
+
+        <input type="hidden" name="source" value="OWN">
+
+        <label class="check" style="margin:1.15rem 0 1.35rem;">
+          <input type="checkbox" name="published" {% if not product or product['published'] %}checked{% endif %}>
+          Publicar en el catálogo
+        </label>
+
+        <div class="actions">
+          <button class="btn btn-accent" type="submit">
+            {% if mode == 'new' %}Crear prenda{% else %}Guardar cambios{% endif %}
+          </button>
+          <a class="btn btn-ghost" href="{{ url_for('main.admin_inventory') }}">Cancelar</a>
+        </div>
+      </div>
+
+      <aside class="preview-box" aria-label="Vista previa">
+        <div class="frame is-focusable" data-focus-frame>
+          <img
+            data-image-preview
+            alt=""
+            style="{{ image_focus_style(product) }}"
+            {% if product and row_get(product, 'image_url') %}
+              src="{{ row_get(product, 'image_url') }}"
+            {% else %}
+              hidden
+            {% endif %}
+          >
+          <div class="card-fallback" data-image-fallback {% if product and row_get(product, 'image_url') %}hidden{% endif %}>
+            {{ (row_get(product, 'name', 'U')[:1] if product else 'U') }}
+          </div>
+          <span class="focus-pin" data-focus-pin aria-hidden="true"></span>
+        </div>
+        <div class="hint">Arrastrá el punto para dejar la foto bien en el catálogo.</div>
+      </aside>
+    </form>
+
+    {% if mode == 'edit' and product_id %}
+      <form
+        class="panel product-danger-zone"
+        method="post"
+        action="{{ url_for('main.product_delete', product_id=product_id) }}"
+        data-confirm="¿Eliminar esta prenda del inventario y del catálogo? No se puede deshacer."
+      >
+        <div>
+          <strong>Zona de peligro</strong>
+          <p class="muted small">Eliminar quita la prenda del inventario y del Shop.</p>
+        </div>
+        <button class="btn btn-danger" type="submit">Eliminar prenda</button>
+      </form>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
+

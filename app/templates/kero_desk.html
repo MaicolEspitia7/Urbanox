@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Proveedor Kero · URBANOX{% endblock %}
+
+{% block body %}
+<header class="site-header staff-header">
+  <div class="wrap staff-bar">
+    <div class="staff-bar-brand">
+      <a class="brand-logo staff-brand" href="{{ url_for('main.kero_desk') }}" aria-label="URBANOX Kero">
+        <img src="{{ url_for('static', filename='img/logo-wordmark.png') }}" alt="URBANOX" width="800" height="800">
+      </a>
+      <span class="staff-mark" aria-hidden="true">Kero</span>
+    </div>
+    <div class="staff-bar-meta">
+      <div class="staff-user-chip">
+        <span class="staff-user-role">Proveedor</span>
+        <span class="staff-user-name">{{ user_name }}</span>
+      </div>
+      {% if is_admin %}
+        <a class="btn btn-ghost btn-sm staff-logout" href="{{ url_for('main.admin_inventory') }}">Admin</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('main.logout') }}">
+        <button class="btn btn-ghost btn-sm staff-logout" type="submit">Salir</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main id="contenido" class="section kero-desk">
+  <div class="wrap kero-wrap">
+    <div class="kero-head">
+      <div>
+        <p class="tag">SOLO ANOTACIONES</p>
+        <h1>Anotar movimiento Kero</h1>
+        <p>
+          Registrá si se vendió, se retiró o se devolvió. El stock Urbanox se actualiza
+          y el administrador lo ve aparte.
+        </p>
+      </div>
+      <div class="kero-stat">
+        <span>Unidades visibles</span>
+        <strong>{{ units }}</strong>
+      </div>
+    </div>
+
+    <div class="kero-callout">
+      <strong>Importante:</strong> no es una caja de ventas. «Se vendió» y «Se retiró»
+      bajan stock; «Se devolvió» lo suma otra vez.
+    </div>
+
+    <form class="employee-search-simple" method="get">
+      <input
+        type="search"
+        name="q"
+        value="{{ q }}"
+        placeholder="Buscar prenda o SKU..."
+        autofocus
+        aria-label="Buscar prenda"
+      >
+      <button class="btn btn-accent" type="submit">Buscar</button>
+    </form>
+
+    {% if products %}
+      <div class="employee-list">
+        {% for p in products %}
+          <article class="sale-card kero-note-card {% if p['stock'] == 0 %}is-empty{% endif %}">
+            <div class="sale-media">
+              {% if p['image_url'] %}
+                <img src="{{ p['image_url'] }}" alt="" loading="lazy" style="{{ image_focus_style(p) }}">
+              {% else %}
+                <div class="card-fallback">{{ p['name'][:1] }}</div>
+              {% endif %}
+            </div>
+
+            <div class="sale-main">
+              <div class="sale-top">
+                <h2>{{ p['name'] }}</h2>
+                <span class="sale-stock {% if p['stock'] == 0 %}is-out{% elif p['stock'] <= 3 %}is-low{% endif %}">
+                  Stock <strong>{{ p['stock'] }}</strong>
+                </span>
+              </div>
+              <p class="sale-meta">
+                {{ p['size'] or 'Sin talla' }}
+                {% if p['color'] %} · {{ p['color'] }}{% endif %}
+                {% if p['sku'] %} · {{ p['sku'] }}{% endif %}
+              </p>
+
+              <form
+                class="sale-form"
+                method="post"
+                action="{{ url_for('main.kero_deduct', product_id=p['id']) }}"
+                data-annotate-form
+                data-stock="{{ p['stock'] }}"
+              >
+                <input type="hidden" name="next_q" value="{{ q }}">
+                <input type="hidden" name="quantity" value="1" data-qty-input>
+                <input type="hidden" name="unit_price" value="{{ p['price'] }}">
+
+                <div class="kero-extra">
+                  <label>
+                    <span>Tipo de anotación</span>
+                    <select name="reason" required data-kero-reason>
+                      {% for key, label in kero_reason_options %}
+                        <option
+                          value="{{ key }}"
+                          data-return="{{ '1' if key in kero_return_reasons else '0' }}"
+                          {% if key == 'venta_kero' %}selected{% endif %}
+                        >{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Nota obligatoria</span>
+                    <input
+                      type="text"
+                      name="note"
+                      required
+                      maxlength="180"
+                      placeholder="Ej. se vendió / se retiró / se devolvió"
+                      data-kero-note
+                    >
+                  </label>
+                </div>
+
+                <div class="sale-controls kero-annotate-controls">
+                  <div class="qty-stepper" aria-label="Cantidad" data-max="{{ p['stock'] if p['stock'] > 0 else 1 }}" data-return-max="99">
+                    <button type="button" class="qty-btn" data-qty-step="-1" aria-label="Menos">−</button>
+                    <span class="qty-value" data-qty-label>1</span>
+                    <button type="button" class="qty-btn" data-qty-step="1" aria-label="Más">+</button>
+                  </div>
+                  <button
+                    class="btn btn-accent sale-submit"
+                    type="submit"
+                    data-confirm-out="¿Anotar salida de {qty} prenda(s)? Esto descuenta stock Urbanox y se avisa al admin."
+                    data-confirm-in="¿Anotar devolución de {qty} prenda(s)? Esto suma stock Urbanox otra vez y se avisa al admin."
+                    data-label-out="Anotar salida"
+                    data-label-in="Anotar devolución"
+                  >
+                    Anotar salida
+                  </button>
+                </div>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <h2 class="page-title">No hay prendas con esa búsqueda</h2>
+        <a class="btn btn-accent" href="{{ url_for('main.kero_desk') }}">Ver todas</a>
+      </div>
+    {% endif %}
+
+    {% if recent %}
+      <section class="recent-simple">
+        <h3>Mis últimas anotaciones</h3>
+        <ul>
+          {% for m in recent[:8] %}
+            <li>
+              <span class="recent-qty {% if is_kero_return(m['reason']) %}is-in{% endif %}">
+                {% if is_kero_return(m['reason']) %}+{% else %}−{% endif %}{{ m['quantity'] }}
+              </span>
+              <div>
+                <strong>{{ m['product_name'] }}</strong>
+                <p>
+                  {{ reason_label(m['reason']) }}
+                  · {{ format_when(m['created_at']) }}
+                  {% if m['note'] %} · “{{ m['note'] }}”{% endif %}
+                </p>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

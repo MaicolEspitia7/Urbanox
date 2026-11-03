@@ -1,0 +1,16 @@
+<header class="site-header store-header">
+  <div class="wrap inner">
+    <a class="brand-logo" href="{{ url_for('main.home') }}" aria-label="URBANOX inicio">
+      <img src="{{ url_for('static', filename='img/logo-wordmark.png') }}" alt="URBANOX" width="800" height="800">
+    </a>
+    <nav class="nav" aria-label="Principal">
+      <a href="{{ url_for('main.home') }}" class="{% if request.endpoint == 'main.home' %}is-active{% endif %}">Inicio</a>
+      <a href="{{ url_for('main.catalog') }}" class="{% if request.endpoint and ('catalog' in request.endpoint or request.endpoint == 'main.product_detail') %}is-active{% endif %}">Shop</a>
+      {% if user_role == 'admin' %}
+        <a class="btn btn-accent btn-sm" href="{{ url_for('main.admin_inventory') }}">Admin</a>
+      {% elif user_role == 'employee' %}
+        <a class="btn btn-accent btn-sm" href="{{ url_for('main.employee_desk') }}">Salidas</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>

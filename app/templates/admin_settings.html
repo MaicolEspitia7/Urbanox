@@ -1,0 +1,43 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Ajustes · URBANOX{% endblock %}
+
+{% block admin_content %}
+<main id="contenido" class="section">
+  <div class="wrap" style="max-width:720px;">
+    <div class="section-head admin-head">
+      <div>
+        <p class="tag">TIENDA</p>
+        <h1 class="page-title admin-title">Ajustes</h1>
+        <p class="muted small">
+          Cuando un cliente toca «Comprar por WhatsApp», se abre este número con la prenda del catálogo.
+        </p>
+      </div>
+    </div>
+
+    <form method="post" class="panel">
+      <label>
+        <span>Número de WhatsApp (con código de país)</span>
+        <input
+          type="tel"
+          name="whatsapp_number"
+          required
+          inputmode="numeric"
+          pattern="[0-9]+"
+          value="{{ whatsapp_number }}"
+          placeholder="573001112233"
+          autocomplete="tel"
+        >
+      </label>
+      <p class="muted small" style="margin:0.65rem 0 1.1rem;">
+        Solo dígitos. Ejemplo Colombia: <strong>57</strong> + celular sin el 0.
+        El mensaje dirá que vio la prenda en la tienda y referirá el producto del catálogo.
+      </p>
+      <div class="actions">
+        <button class="btn btn-accent" type="submit">Guardar número</button>
+        <a class="btn btn-ghost" href="{{ url_for('main.catalog') }}" target="_blank" rel="noopener">Probar tienda</a>
+      </div>
+    </form>
+  </div>
+</main>
+{% endblock %}

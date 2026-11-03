@@ -1,0 +1,30 @@
+{% macro product_card(p, featured=false) %}
+{% set stock = p['stock'] %}
+<a class="shop-card {% if featured %}is-featured{% endif %} {% if stock == 0 %}is-soldout{% endif %}" href="{{ url_for('main.product_detail', product_id=p['id']) }}">
+  <div class="shop-card-media">
+    {% if p['image_url'] %}
+      <img src="{{ p['image_url'] }}" alt="{{ p['name'] }}" loading="lazy" style="{{ image_focus_style(p) }}">
+    {% else %}
+      <div class="card-fallback">{{ p['name'][:1] }}</div>
+    {% endif %}
+    <div class="shop-card-hover">
+      <span>{% if stock == 0 %}Agotado{% else %}Pedir por WhatsApp{% endif %}</span>
+    </div>
+    {% if stock == 0 %}
+      <span class="shop-card-flag">Sold out</span>
+    {% elif stock <= 3 %}
+      <span class="shop-card-flag is-hot">Últimas</span>
+    {% endif %}
+  </div>
+  <div class="shop-card-body">
+    <div class="shop-card-row">
+      <p class="shop-card-cat">{{ p['category'] }}</p>
+      <p class="shop-card-price">{{ format_cop(p['price']) }}</p>
+    </div>
+    <h3>{{ p['name'] }}</h3>
+    <p class="shop-card-meta">
+      {{ p['size'] or '—' }}{% if p['color'] %} · {{ p['color'] }}{% endif %}
+    </p>
+  </div>
+</a>
+{% endmacro %}

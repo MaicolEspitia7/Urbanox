@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "macros.html" import product_card with context %}
+
+{% block title %}{{ product['name'] }} · URBANOX{% endblock %}
+
+{% block body %}
+{% include "partials/site_header.html" %}
+
+<main id="contenido" class="store-pdp store-fx">
+  <div class="wrap pdp-grid pdp-fx">
+    <div class="pdp-media">
+      {% if product['image_url'] %}
+        <img src="{{ product['image_url'] }}" alt="{{ product['name'] }}" style="{{ image_focus_style(product) }}">
+      {% else %}
+        <div class="card-fallback" style="font-size:5rem;padding:2rem;">{{ product['name'][:1] }}</div>
+      {% endif %}
+    </div>
+
+    <div class="pdp-info">
+      <p class="tag tag-fx">{{ product['category'] }}</p>
+      <h1>{{ product['name'] }}</h1>
+      <p class="pdp-price">{{ format_cop(product['price']) }}</p>
+
+      {% if product['stock'] == 0 %}
+        <p class="stock-pill is-out">Agotado por ahora</p>
+      {% elif product['stock'] <= 3 %}
+        <p class="stock-pill is-low">Quedan pocas · {{ product['stock'] }}</p>
+      {% else %}
+        <p class="stock-pill">Disponible · {{ product['stock'] }} en stock</p>
+      {% endif %}
+
+      <p class="pdp-desc">{{ product['description'] or 'Streetwear Urbanox con actitud hip-hop.' }}</p>
+
+      <dl class="pdp-specs pdp-specs-fx">
+        <div><dt>Talla</dt><dd>{{ product['size'] or '—' }}</dd></div>
+        <div><dt>Color</dt><dd>{{ product['color'] or '—' }}</dd></div>
+        <div><dt>SKU</dt><dd>{{ product['sku'] or '—' }}</dd></div>
+      </dl>
+
+      <div class="pdp-actions">
+        {% if product['stock'] > 0 %}
+          <a
+            class="btn btn-whatsapp"
+            href="{{ whatsapp_buy_url(product) }}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Comprar por WhatsApp
+          </a>
+        {% else %}
+          <button class="btn btn-ghost" type="button" disabled>Agotado</button>
+        {% endif %}
+        <a class="btn btn-ghost" href="{{ url_for('main.catalog') }}">Seguir explorando</a>
+      </div>
+    </div>
+  </div>
+
+  {% if related %}
+  <section class="section section-fx">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="tag tag-fx">NEXT DROP</p>
+          <h2 class="page-title">Más del drop</h2>
+        </div>
+      </div>
+      <div class="shop-grid shop-grid-fx">
+        {% for p in related %}
+          {{ product_card(p) }}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

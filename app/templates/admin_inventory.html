@@ -1,0 +1,142 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Inventario · URBANOX{% endblock %}
+
+{% block admin_content %}
+<main id="contenido" class="section">
+  <div class="wrap">
+    <div class="section-head admin-head">
+      <div>
+        <h1 class="page-title admin-title">Inventario</h1>
+        <p class="muted small">
+          Creá, editá, subí/bajá stock, publicá u ocultá, o eliminá. Lo publicado se ve en el Shop.
+        </p>
+      </div>
+      <a class="btn btn-accent" href="{{ url_for('main.product_new') }}">+ Nueva prenda</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <p class="label">Prendas</p>
+        <p class="value">{{ products|length }}</p>
+      </div>
+      <div class="stat">
+        <p class="label">Unidades</p>
+        <p class="value">{{ total_units }}</p>
+      </div>
+      <div class="stat">
+        <p class="label">Valor inventario</p>
+        <p class="value value-money">{{ format_cop(inventory_value) }}</p>
+      </div>
+    </div>
+    <p class="muted small admin-note">{{ published }} publicadas en catálogo</p>
+
+    <div class="toolbar">
+      <input
+        class="search"
+        type="search"
+        placeholder="Buscar en inventario..."
+        data-inventory-search
+        aria-label="Buscar en inventario"
+      >
+      <span class="muted small" data-inventory-count></span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Prenda</th>
+            <th>Stock</th>
+            <th>Precio venta</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if not products %}
+            <tr>
+              <td colspan="5">
+                <div class="empty" style="border:0;background:transparent;">
+                  <h2 class="page-title">Sin prendas todavía</h2>
+                  <p class="muted">Crea la primera para empezar a llenar el catálogo.</p>
+                  <a class="btn btn-ink" href="{{ url_for('main.product_new') }}">Crear prenda</a>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            {% for p in products %}
+              <tr
+                data-inventory-row
+                data-search="{{ p['name'] }} {{ p['category'] }} {{ p['color'] }} {{ p['size'] }} {{ p['sku'] or '' }} {{ p['price'] }}"
+              >
+                <td>
+                  <div class="product-cell">
+                    {% if p['image_url'] %}
+                      <img class="thumb" src="{{ p['image_url'] }}" alt="" loading="lazy" style="{{ image_focus_style(p) }}">
+                    {% else %}
+                      <div class="thumb thumb-fallback">{{ p['name'][:1] }}</div>
+                    {% endif %}
+                    <div>
+                      <strong>{{ p['name'] }}</strong>
+                      <div class="muted small">
+                        {{ p['category'] }}
+                        {% if p['size'] %} · {{ p['size'] }}{% endif %}
+                        {% if p['color'] %} · {{ p['color'] }}{% endif %}
+                        {% if p['sku'] %} · {{ p['sku'] }}{% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="stock-controls">
+                    <form method="post" action="{{ url_for('main.product_stock', product_id=p['id']) }}">
+                      <input type="hidden" name="delta" value="-1">
+                      <button class="btn btn-ghost btn-sm" type="submit" aria-label="Bajar stock">−</button>
+                    </form>
+                    <strong class="{% if p['stock'] == 0 %}text-accent{% elif p['stock'] <= 3 %}text-warn{% endif %}">{{ p['stock'] }}</strong>
+                    <form method="post" action="{{ url_for('main.product_stock', product_id=p['id']) }}">
+                      <input type="hidden" name="delta" value="1">
+                      <button class="btn btn-ghost btn-sm" type="submit" aria-label="Subir stock">+</button>
+                    </form>
+                  </div>
+                </td>
+                <td><strong>{{ format_cop(p['price']) }}</strong></td>
+                <td>
+                  <form method="post" action="{{ url_for('main.product_toggle_publish', product_id=p['id']) }}">
+                    {% if p['published'] %}
+                      <button class="btn btn-ghost btn-sm text-own" type="submit" title="Ocultar del catálogo">Publicada</button>
+                    {% else %}
+                      <button class="btn btn-ghost btn-sm muted" type="submit" title="Mostrar en el catálogo">Borrador</button>
+                    {% endif %}
+                  </form>
+                </td>
+                <td>
+                  <div class="actions admin-row-actions">
+                    <a class="btn btn-ghost btn-sm" href="{{ url_for('main.product_edit', product_id=p['id']) }}">Editar</a>
+                    {% if p['published'] %}
+                      <a class="btn btn-ghost btn-sm" href="{{ url_for('main.product_detail', product_id=p['id']) }}" target="_blank" rel="noopener">Ver</a>
+                    {% endif %}
+                    <form
+                      method="post"
+                      action="{{ url_for('main.product_delete', product_id=p['id']) }}"
+                      data-confirm="¿Eliminar «{{ p['name'] }}» del inventario y del catálogo? No se puede deshacer."
+                    >
+                      <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+            <tr data-inventory-empty hidden>
+              <td colspan="5" class="muted" style="text-align:center;padding:2rem;">
+                No hay coincidencias con esa búsqueda.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+{% endblock %}

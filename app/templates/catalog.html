@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "macros.html" import product_card with context %}
+
+{% block title %}Shop · URBANOX{% endblock %}
+
+{% block body %}
+{% include "partials/site_header.html" %}
+
+<main id="contenido" class="store-catalog store-fx">
+  <section class="catalog-hero catalog-hero-fx">
+    <div class="catalog-hero-mesh" aria-hidden="true"></div>
+    <div class="wrap catalog-hero-inner">
+      <div class="catalog-hero-copy">
+        <p class="tag tag-fx catalog-kicker">SHOP / THE DROP</p>
+        <h1 class="page-title xl catalog-title">The Drop</h1>
+        <p class="catalog-lead">Tocá una prenda y pedila por WhatsApp.</p>
+      </div>
+      <div class="catalog-count" aria-label="{{ products|length }} piezas">
+        <strong>{{ products|length }}</strong>
+        <span>piezas</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="rail rail-fx catalog-rail-home" aria-hidden="true">
+    <div class="rail-track">
+      {% for _ in range(2) %}
+        <span>HIP-HOP</span>
+        <span>STREETWEAR</span>
+        <span>THE DROP</span>
+        <span>STOCK REAL</span>
+        <span>URBANOX</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="catalog-dock-sentinel" data-catalog-dock-sentinel aria-hidden="true"></div>
+  <div class="catalog-dock-spacer" data-catalog-dock-spacer aria-hidden="true"></div>
+  <div class="catalog-dock" data-catalog-dock>
+    <div class="wrap">
+      <form class="catalog-dock-bar" method="get" role="search">
+        {% if categories %}
+          <div class="catalog-dock-chips" aria-label="Categorías">
+            <a class="chip {% if not categoria %}is-active{% endif %}" href="{{ url_for('main.catalog', q=q) }}">Todo</a>
+            {% for cat in categories %}
+              <a class="chip {% if categoria == cat %}is-active{% endif %}" href="{{ url_for('main.catalog', q=q, categoria=cat) }}">{{ cat }}</a>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div class="catalog-dock-search">
+          <input type="search" name="q" value="{{ q }}" placeholder="Buscar prenda, color o talla..." aria-label="Buscar">
+          {% if categoria %}<input type="hidden" name="categoria" value="{{ categoria }}">{% endif %}
+          <button class="btn btn-neon btn-sm" type="submit">Buscar</button>
+          {% if q or categoria %}
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('main.catalog') }}">Limpiar</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <section class="section section-fx catalog-grid-section">
+    <div class="wrap">
+      {% if q or categoria %}
+        <p class="catalog-filter-note muted small">
+          {{ products|length }} resultado{{ '' if products|length == 1 else 's' }}
+          {% if categoria %} · {{ categoria }}{% endif %}
+          {% if q %} · “{{ q }}”{% endif %}
+        </p>
+      {% endif %}
+      {% if products %}
+        <div class="shop-grid shop-grid-fx">
+          {% for p in products %}
+            {{ product_card(p) }}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">
+          <h2 class="page-title">Nada por aquí</h2>
+          <p class="muted">Probá otra búsqueda o mirá todo el drop.</p>
+          <a class="btn btn-neon" href="{{ url_for('main.catalog') }}">Ver todo</a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer store-footer store-footer-fx">
+  <div class="footer-tag">URBANOX SHOP</div>
+  {% if not user_role %}
+    <p class="footer-staff"><a href="{{ url_for('main.login') }}">Acceso equipo</a></p>
+  {% endif %}
+</footer>
+{% endblock %}

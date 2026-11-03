@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% from "macros.html" import product_card with context %}
+
+{% block title %}URBANOX — Hip-Hop Streetwear{% endblock %}
+
+{% block body %}
+<div class="intro" data-intro aria-hidden="true">
+  <div class="intro-stage">
+    <img src="{{ url_for('static', filename='img/logo-hero.png') }}" alt="URBANOX" width="800" height="800">
+    <p class="intro-tag">THE DROP</p>
+    <div class="intro-bars" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+{% include "partials/site_header.html" %}
+
+<main id="contenido" class="store-home store-fx">
+  <section class="store-hero">
+    <div class="store-hero-mesh" aria-hidden="true"></div>
+    <div class="store-hero-scan" aria-hidden="true"></div>
+    <div class="wrap store-hero-grid">
+      <div class="store-hero-content">
+        <p class="store-hero-kicker">
+          <span class="fx-live"></span>
+          URBANOX LIVE DROP
+        </p>
+        <h1>Streetwear con flow real</h1>
+        <p>Piezas con actitud hip-hop. Stock real, precios claros y drops que se actualizan desde el inventario.</p>
+        <div class="hero-actions">
+          <a class="btn btn-neon" href="{{ url_for('main.catalog') }}">Explorar el drop</a>
+          <a class="btn btn-ghost is-on-dark" href="#nuevos">Ver lo nuevo</a>
+        </div>
+        <div class="hero-signals" aria-hidden="true">
+          <span>STOCK LIVE</span>
+          <span>DROP 01</span>
+          <span>STREET</span>
+        </div>
+      </div>
+      <div class="store-hero-figure" aria-hidden="true">
+        <div class="hero-orbit"></div>
+        <div class="hero-frame">
+          <img
+            src="{{ url_for('static', filename='img/logo-hero.png') }}"
+            alt=""
+            width="800"
+            height="800"
+            fetchpriority="high"
+          >
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rail rail-fx" aria-hidden="true">
+    <div class="rail-track">
+      {% for _ in range(2) %}
+        <span>HIP-HOP</span>
+        <span>STREETWEAR</span>
+        <span>THE DROP</span>
+        <span>STOCK REAL</span>
+        <span>URBANOX</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <section class="section section-fx" id="nuevos">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="tag tag-fx">FRESH DROP</p>
+          <h2 class="page-title xl">Lo nuevo</h2>
+          <p class="muted small">Deslizá el drop. Cada pieza con stock real.</p>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('main.catalog') }}">Ver todo</a>
+      </div>
+    </div>
+
+    {% if products %}
+      <div class="snap-row snap-fx" data-snap-row>
+        {% for p in products %}
+          <div class="snap-item">
+            {{ product_card(p) }}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="wrap">
+        <div class="empty">
+          <h2 class="page-title">Pronto el drop</h2>
+          <p class="muted">Cuando publiquen prendas, aparecen acá.</p>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="section store-split">
+    <div class="wrap store-split-grid">
+      <article class="store-split-copy reveal-on-scroll">
+        <p class="tag tag-fx">THE CULTURE</p>
+        <h2 class="page-title">Hecho para la calle</h2>
+        <p class="muted">Siluetas con carácter, detalles urbanos y una experiencia de compra limpia: mirás, elegís y listo.</p>
+        <a class="btn btn-neon" href="{{ url_for('main.catalog') }}">Entrar al catálogo</a>
+      </article>
+      <aside class="store-split-panel reveal-on-scroll" aria-hidden="true">
+        <img src="{{ url_for('static', filename='img/logo-hero.png') }}" alt="" width="800" height="800">
+      </aside>
+    </div>
+  </section>
+
+  {% if products|length > 1 %}
+  <section class="section section-fx">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="tag tag-fx">HOT PICKS</p>
+          <h2 class="page-title xl">Selección Urbanox</h2>
+        </div>
+      </div>
+      <div class="shop-grid shop-grid-fx">
+        {% for p in products[1:5] %}
+          {{ product_card(p) }}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+</main>
+
+<footer class="site-footer store-footer store-footer-fx">
+  <div class="brand-logo">
+    <img src="{{ url_for('static', filename='img/logo-wordmark.png') }}" alt="URBANOX" width="800" height="800">
+  </div>
+  <div class="footer-tag">STAY IN THE CULTURE</div>
+  <p>Hip-hop streetwear</p>
+  {% if not user_role %}
+    <p class="footer-staff"><a href="{{ url_for('main.login') }}">Acceso equipo</a></p>
+  {% endif %}
+</footer>
+{% endblock %}

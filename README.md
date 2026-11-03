@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# URBANOX
 
-## Getting Started
+Inventario + catálogo streetwear (Flask).
 
-First, run the development server:
+## Qué incluye
+
+- **Shop** público: catálogo, ficha de prenda y compra por WhatsApp
+- **Admin**: inventario, prendas, ajustes de WhatsApp, movimientos Kero
+- **Empleado**: salidas de tienda
+- **Proveedor Kero**: anotaciones (se vendió / se retiró / se devolvió)
+
+## Requisitos
+
+- Python 3.11+
+
+## Arranque local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+# source venv/bin/activate
+
+pip install -r requirements.txt
+python run.py
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrí [http://127.0.0.1:5055](http://127.0.0.1:5055).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Usuarios (primera vez)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Las claves **no** van en el código. Opciones:
 
-## Learn More
+1. Definí variables de entorno antes del primer arranque:
+   - `URBANOX_ADMIN_PASSWORD`
+   - `URBANOX_EMPLOYEE_PASSWORD`
+   - `URBANOX_KERO_PASSWORD`
+2. Si no las definís, al crear cada usuario la clave temporal se imprime en la consola.
 
-To learn more about Next.js, take a look at the following resources:
+Correos por defecto: `admin@urbanox.com`, `empleado@urbanox.com`, `kero@urbanox.com`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Notas de seguridad
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `urbanox.db`, `.env` y `.secret_key` **no** se suben al repo.
+- `SECRET_KEY` y `WHATSAPP_NUMBER` pueden ir por entorno; el WhatsApp también se configura en Admin → **Ajustes**.
+- Subidas: `app/static/uploads/products/` (ignorado en git salvo `.gitkeep`).

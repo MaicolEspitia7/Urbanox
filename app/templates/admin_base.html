@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block body %}
+<header class="site-header staff-header">
+  <div class="wrap staff-bar">
+    <div class="staff-bar-brand">
+      <a class="brand-logo staff-brand" href="{{ url_for('main.admin_inventory') }}" aria-label="URBANOX admin">
+        <img src="{{ url_for('static', filename='img/logo-wordmark.png') }}" alt="URBANOX" width="800" height="800">
+      </a>
+      <span class="staff-mark" aria-hidden="true">Backstage</span>
+      <nav class="nav staff-nav" aria-label="Admin">
+        <a href="{{ url_for('main.admin_inventory') }}" class="{% if request.endpoint == 'main.admin_inventory' %}is-active{% endif %}">Inventario</a>
+        <a href="{{ url_for('main.product_new') }}" class="{% if request.endpoint in ['main.product_new', 'main.product_edit'] %}is-active{% endif %}">Nueva prenda</a>
+        <a href="{{ url_for('main.employee_desk') }}">Salidas</a>
+        <a href="{{ url_for('main.admin_kero_moves') }}" class="{% if request.endpoint == 'main.admin_kero_moves' %}is-active{% endif %}">Kero</a>
+        <a href="{{ url_for('main.admin_settings') }}" class="{% if request.endpoint == 'main.admin_settings' %}is-active{% endif %}">Ajustes</a>
+        <a href="{{ url_for('main.catalog') }}" class="staff-nav-store">Tienda</a>
+      </nav>
+    </div>
+    <div class="staff-bar-meta">
+      <div class="staff-user-chip">
+        <span class="staff-user-role">Admin</span>
+        <span class="staff-user-name">{{ user_name }}</span>
+      </div>
+      <form method="post" action="{{ url_for('main.logout') }}">
+        <button class="btn btn-ghost btn-sm staff-logout" type="submit">Salir</button>
+      </form>
+    </div>
+  </div>
+</header>
+{% block admin_content %}{% endblock %}
+{% endblock %}

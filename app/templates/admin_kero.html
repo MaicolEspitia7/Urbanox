@@ -1,0 +1,109 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Movimientos Kero · URBANOX{% endblock %}
+
+{% block admin_content %}
+<main id="contenido" class="section">
+  <div class="wrap">
+    <div class="section-head admin-head">
+      <div>
+        <p class="tag">KERO LIVE</p>
+        <h1 class="page-title admin-title">Movimientos Kero</h1>
+        <p class="muted small">
+          Acá mirás qué se vendió, se retiró o se devolvió. No es el inventario principal.
+        </p>
+      </div>
+      <a class="btn btn-ghost" href="{{ url_for('main.kero_desk') }}">Abrir panel Kero</a>
+    </div>
+
+    <section class="kero-board" aria-label="Resumen del día">
+      <div class="kero-board-today">
+        <p class="tag">HOY</p>
+        <div class="kero-board-metrics">
+          <div>
+            <span>Anotaciones</span>
+            <strong>{{ today['moves'] or 0 }}</strong>
+          </div>
+          <div>
+            <span>Salieron</span>
+            <strong class="qty-out">−{{ today['out_units'] or 0 }}</strong>
+          </div>
+          <div>
+            <span>Volvieron</span>
+            <strong class="qty-in">+{{ today['in_units'] or 0 }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="kero-board-totals">
+        <div class="stat">
+          <p class="label">Total anotaciones</p>
+          <p class="value">{{ totals['moves'] }}</p>
+        </div>
+        <div class="stat">
+          <p class="label">Salidas</p>
+          <p class="value">{{ totals['out_units'] }}</p>
+        </div>
+        <div class="stat">
+          <p class="label">Devoluciones</p>
+          <p class="value">{{ totals['in_units'] }}</p>
+        </div>
+      </div>
+    </section>
+
+    <form class="toolbar kero-toolbar" method="get">
+      <input
+        class="search"
+        type="search"
+        name="q"
+        value="{{ q }}"
+        placeholder="Buscar prenda, SKU, nota..."
+        aria-label="Buscar movimientos Kero"
+      >
+      <button class="btn btn-accent btn-sm" type="submit">Filtrar</button>
+      {% if q %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('main.admin_kero_moves') }}">Limpiar</a>
+      {% endif %}
+    </form>
+
+    {% if not moves %}
+      <div class="empty kero-board-empty">
+        <h2 class="page-title">Sin movimientos todavía</h2>
+        <p class="muted">Cuando Kero anote salidas o devoluciones, aparecen acá.</p>
+        <a class="btn btn-accent" href="{{ url_for('main.kero_desk') }}">Ir al panel Kero</a>
+      </div>
+    {% else %}
+      <ul class="kero-move-feed" aria-label="Historial de movimientos">
+        {% for m in moves %}
+          <li class="kero-move-card {% if is_kero_return(m['reason']) %}is-in{% else %}is-out{% endif %}">
+            <div class="kero-move-qty" aria-hidden="true">
+              {% if is_kero_return(m['reason']) %}+{% else %}−{% endif %}{{ m['quantity'] }}
+            </div>
+            <div class="kero-move-media">
+              {% if m['image_url'] %}
+                <img src="{{ m['image_url'] }}" alt="" loading="lazy">
+              {% else %}
+                <div class="thumb-fallback">{{ m['product_name'][:1] }}</div>
+              {% endif %}
+            </div>
+            <div class="kero-move-body">
+              <div class="kero-move-top">
+                <strong>{{ m['product_name'] }}</strong>
+                <span class="kero-chip">{{ reason_label(m['reason']) }}</span>
+              </div>
+              <p>
+                {{ format_when(m['created_at']) }}
+                · {{ m['user_name'] }}
+                {% if m['product_sku'] %} · {{ m['product_sku'] }}{% endif %}
+                · stock {{ m['stock_after'] if m['stock_after'] is not none else '—' }}
+              </p>
+              {% if m['note'] %}
+                <p class="kero-move-note">“{{ m['note'] }}”</p>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

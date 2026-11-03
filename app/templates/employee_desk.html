@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Salidas · URBANOX{% endblock %}
+
+{% block body %}
+<header class="site-header staff-header">
+  <div class="wrap staff-bar">
+    <div class="staff-bar-brand">
+      <a class="brand-logo staff-brand" href="{{ url_for('main.employee_desk') }}" aria-label="URBANOX">
+        <img src="{{ url_for('static', filename='img/logo-wordmark.png') }}" alt="URBANOX" width="800" height="800">
+      </a>
+      <span class="staff-mark" aria-hidden="true">Floor</span>
+    </div>
+    <div class="staff-bar-meta">
+      <div class="staff-user-chip">
+        <span class="staff-user-role">Empleado</span>
+        <span class="staff-user-name">{{ user_name }}</span>
+      </div>
+      {% if is_admin %}
+        <a class="btn btn-ghost btn-sm staff-logout" href="{{ url_for('main.admin_inventory') }}">Admin</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('main.logout') }}">
+        <button class="btn btn-ghost btn-sm staff-logout" type="submit">Salir</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main id="contenido" class="section employee-desk">
+  <div class="wrap employee-wrap">
+    <div class="employee-simple-head">
+      <h1>¿Qué prenda salió?</h1>
+      <p>Buscala, elegí cantidad y confirmá. El precio de venta ya viene del inventario.</p>
+    </div>
+
+    <form class="employee-search-simple" method="get">
+      <input
+        type="search"
+        name="q"
+        value="{{ q }}"
+        placeholder="Nombre o código (SKU)..."
+        autofocus
+        aria-label="Buscar prenda"
+      >
+      <button class="btn btn-accent" type="submit">Buscar</button>
+    </form>
+
+    {% if products %}
+      <div class="employee-list">
+        {% for p in products %}
+          <article class="sale-card {% if p['stock'] == 0 %}is-empty{% endif %}">
+            <div class="sale-media">
+              {% if p['image_url'] %}
+                <img src="{{ p['image_url'] }}" alt="" loading="lazy" style="{{ image_focus_style(p) }}">
+              {% else %}
+                <div class="card-fallback">{{ p['name'][:1] }}</div>
+              {% endif %}
+            </div>
+
+            <div class="sale-main">
+              <div class="sale-top">
+                <h2>{{ p['name'] }}</h2>
+                <span class="sale-price">{{ format_cop(p['price']) }}</span>
+              </div>
+
+              <p class="sale-meta">
+                {{ p['size'] or 'Sin talla' }}
+                {% if p['color'] %} · {{ p['color'] }}{% endif %}
+                {% if p['sku'] %} · {{ p['sku'] }}{% endif %}
+                ·
+                <span class="sale-stock {% if p['stock'] == 0 %}is-out{% elif p['stock'] <= 3 %}is-low{% endif %}">
+                  Quedan <strong>{{ p['stock'] }}</strong>
+                </span>
+              </p>
+
+              {% if p['stock'] > 0 %}
+                <form
+                  class="sale-form"
+                  method="post"
+                  action="{{ url_for('main.employee_deduct', product_id=p['id']) }}"
+                  data-sale-form
+                  data-unit-price="{{ p['price'] }}"
+                >
+                  <input type="hidden" name="next_q" value="{{ q }}">
+                  <input type="hidden" name="quantity" value="1" data-qty-input>
+                  <input type="hidden" name="unit_price" value="{{ p['price'] }}" data-unit-price-input>
+
+                  <div class="sale-controls">
+                    <div class="qty-stepper" aria-label="Cantidad" data-max="{{ p['stock'] }}">
+                      <button type="button" class="qty-btn" data-qty-step="-1" aria-label="Menos">−</button>
+                      <span class="qty-value" data-qty-label>1</span>
+                      <button type="button" class="qty-btn" data-qty-step="1" aria-label="Más">+</button>
+                    </div>
+                    <p class="sale-total-line">
+                      Total <strong data-sale-total>{{ format_cop(p['price']) }}</strong>
+                    </p>
+                    <button
+                      class="btn btn-accent sale-submit"
+                      type="submit"
+                      data-confirm-template="¿Registrar salida de {qty} por {total}?"
+                    >
+                      Confirmar salida
+                    </button>
+                  </div>
+
+                  <details class="sale-more">
+                    <summary>¿No es una venta? Tocá aquí</summary>
+                    <div class="sale-more-grid">
+                      <label>
+                        <span>Motivo</span>
+                        <select name="reason">
+                          {% for key, label in reason_options %}
+                            <option value="{{ key }}" {% if key == 'venta' %}selected{% endif %}>{{ label }}</option>
+                          {% endfor %}
+                        </select>
+                      </label>
+                      <label>
+                        <span>Nota</span>
+                        <input type="text" name="note" placeholder="Ej. factura o cliente">
+                      </label>
+                    </div>
+                  </details>
+                </form>
+              {% else %}
+                <p class="sale-empty-msg">Sin stock. Avisá al admin.</p>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <h2 class="page-title">No encontré esa prenda</h2>
+        <p class="muted">Probá con otra palabra o el código SKU.</p>
+        <a class="btn btn-accent" href="{{ url_for('main.employee_desk') }}">Ver todas</a>
+      </div>
+    {% endif %}
+
+    {% if recent %}
+      <section class="recent-simple">
+        <h3>Últimas salidas</h3>
+        <ul>
+          {% for m in recent[:6] %}
+            <li>
+              <span class="recent-qty">−{{ m['quantity'] }}</span>
+              <div>
+                <strong>{{ m['product_name'] }}</strong>
+                <p>
+                  {{ format_cop(m['sale_total'] or 0) }}
+                  · {{ reason_label(m['reason']) }}
+                  · {{ m['user_name'] }}
+                  · {{ format_when(m['created_at']) }}
+                </p>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

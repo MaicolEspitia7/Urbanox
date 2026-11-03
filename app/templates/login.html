@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Acceso equipo · URBANOX{% endblock %}
+
+{% block body %}
+<main id="contenido" class="login-page">
+  <div class="login-visual" aria-hidden="true">
+    <img
+      src="{{ url_for('static', filename='img/logo-hero.png') }}"
+      alt=""
+      width="800"
+      height="800"
+      decoding="async"
+    >
+  </div>
+  <div class="login-box">
+    <a class="brand-logo brand-lg" href="{{ url_for('main.home') }}" aria-label="URBANOX">
+      <img src="{{ url_for('static', filename='img/logo-wordmark.png') }}" alt="URBANOX" width="800" height="800">
+    </a>
+    <h1 class="page-title" style="margin-top:1.5rem;">Acceso equipo</h1>
+    <p class="muted small" style="margin:0.55rem 0 1rem;">
+      Clientes sin cuenta. Equipo y Proveedor Kero con acceso propio.
+    </p>
+
+    <div class="role-cards role-cards-3">
+      <article>
+        <p class="tag">ADMIN</p>
+        <h3>Inventario</h3>
+        <p class="muted small">Crear, editar y ver salidas Kero.</p>
+      </article>
+      <article>
+        <p class="tag">EMPLEADO</p>
+        <h3>Salidas tienda</h3>
+        <p class="muted small">Descontar ventas en Urbanox.</p>
+      </article>
+      <article>
+        <p class="tag">KERO</p>
+        <h3>Anotaciones</h3>
+        <p class="muted small">Solo anotar salidas cuando se llevan merca Urbanox.</p>
+      </article>
+    </div>
+
+    <div class="panel" style="margin-top:1rem;">
+      <form method="post">
+        <label style="margin-bottom:1rem;">
+          <span>Correo</span>
+          <input type="email" name="email" required autocomplete="username" placeholder="tu@correo.com" autofocus>
+        </label>
+        <label style="margin-bottom:1.15rem;">
+          <span>Contraseña</span>
+          <div class="password-field">
+            <input type="password" name="password" required autocomplete="current-password" data-password-input>
+            <button class="btn btn-ghost btn-sm" type="button" data-toggle-password aria-pressed="false">Mostrar</button>
+          </div>
+        </label>
+        <button class="btn btn-accent" style="width:100%;" type="submit">Entrar</button>
+      </form>
+    </div>
+
+    <p style="margin-top:1.25rem;">
+      <a class="muted small" href="{{ url_for('main.catalog') }}">← Volver a ver ropa (sin login)</a>
+    </p>
+  </div>
+</main>
+{% endblock %}
