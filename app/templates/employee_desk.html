@@ -26,11 +26,14 @@
   </div>
 </header>
 
-<main id="contenido" class="section employee-desk">
+<main id="contenido" class="section employee-desk" data-employee-batch>
   <div class="wrap employee-wrap">
     <div class="employee-simple-head">
       <h1>¿Qué prenda salió?</h1>
-      <p>Buscala, elegí cantidad y confirmá. El precio de venta ya viene del inventario.</p>
+      <p>
+        Una por una con <strong>Confirmar salida</strong>, o marcá varias con
+        <strong>Al lote</strong> y sacá todo de una.
+      </p>
     </div>
 
     <form class="employee-search-simple" method="get">
@@ -48,7 +51,14 @@
     {% if products %}
       <div class="employee-list">
         {% for p in products %}
-          <article class="sale-card {% if p['stock'] == 0 %}is-empty{% endif %}">
+          <article
+            class="sale-card {% if p['stock'] == 0 %}is-empty{% endif %}"
+            data-sale-card
+            data-product-id="{{ p['id'] }}"
+            data-product-name="{{ p['name'] }}"
+            data-unit-price="{{ p['price'] }}"
+            data-stock="{{ p['stock'] }}"
+          >
             <div class="sale-media">
               {% if p['image_url'] %}
                 <img src="{{ p['image_url'] }}" alt="" loading="lazy" style="{{ image_focus_style(p) }}">
@@ -81,6 +91,11 @@
                   data-sale-form
                   data-unit-price="{{ p['price'] }}"
                 >
+                  <label class="sale-batch-toggle">
+                    <input type="checkbox" data-batch-toggle>
+                    <span>Al lote</span>
+                  </label>
+
                   <input type="hidden" name="next_q" value="{{ q }}">
                   <input type="hidden" name="quantity" value="1" data-qty-input>
                   <input type="hidden" name="unit_price" value="{{ p['price'] }}" data-unit-price-input>
@@ -158,5 +173,29 @@
       </section>
     {% endif %}
   </div>
+
+  <form
+    class="batch-dock"
+    method="post"
+    action="{{ url_for('main.employee_deduct_batch') }}"
+    data-batch-form
+    hidden
+  >
+    <input type="hidden" name="next_q" value="{{ q }}">
+    <input type="hidden" name="items" value="[]" data-batch-items>
+    <input type="hidden" name="reason" value="venta" data-batch-reason>
+    <input type="hidden" name="note" value="" data-batch-note>
+    <div class="batch-dock-inner wrap">
+      <div class="batch-dock-copy">
+        <strong data-batch-count>0 prendas</strong>
+        <span data-batch-units>0 und.</span>
+        <span class="batch-dock-total">Total <strong data-batch-total>$ 0</strong></span>
+      </div>
+      <div class="batch-dock-actions">
+        <button class="btn btn-ghost btn-sm" type="button" data-batch-clear>Vaciar</button>
+        <button class="btn btn-accent" type="submit" data-batch-submit>Confirmar lote</button>
+      </div>
+    </div>
+  </form>
 </main>
 {% endblock %}

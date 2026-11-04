@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 from flask import (
@@ -394,6 +395,61 @@ def employee_desk():
     )
 
 
+def _parse_employee_reason_note():
+    note = (request.form.get("note") or "").strip()
+    reason = (request.form.get("reason") or "venta").strip()
+    valid_reasons = {key for key, _ in REASON_OPTIONS}
+    if reason not in valid_reasons:
+        reason = "venta"
+    return reason, note
+
+
+def _employee_apply_deduct(product, qty: int, unit_price: float, reason: str, note: str):
+    """Aplica una salida. Devuelve (ok, message, sale_total)."""
+    if qty < 1:
+        return False, "Indica cuántas unidades vas a descontar.", 0
+    if qty > product["stock"]:
+        return (
+            False,
+            f"Solo hay {product['stock']} en stock de «{product['name']}».",
+            0,
+        )
+    if unit_price < 0:
+        return False, "El precio de venta no puede ser negativo.", 0
+
+    now = datetime.now(timezone.utc).isoformat()
+    next_stock = product["stock"] - qty
+    sale_total = unit_price * qty
+    execute(
+        "UPDATE products SET stock = ?, updated_at = ? WHERE id = ?",
+        (next_stock, now, product["id"]),
+    )
+    execute(
+        """
+        INSERT INTO stock_moves (
+            product_id, user_id, quantity, note, reason, source,
+            unit_price, sale_total, stock_after, created_at
+        ) VALUES (?, ?, ?, ?, ?, 'OWN', ?, ?, ?, ?)
+        """,
+        (
+            product["id"],
+            session["user_id"],
+            qty,
+            note,
+            reason,
+            unit_price,
+            sale_total,
+            next_stock,
+            now,
+        ),
+    )
+    return (
+        True,
+        f"−{qty} «{product['name']}» por {format_cop(sale_total)}. Quedan {next_stock}.",
+        sale_total,
+    )
+
+
 @bp.post("/empleado/productos/<int:product_id>/descontar")
 @employee_required
 def employee_deduct(product_id: int):
@@ -406,12 +462,8 @@ def employee_deduct(product_id: int):
         qty = int(request.form.get("quantity") or 0)
     except ValueError:
         qty = 0
-    note = (request.form.get("note") or "").strip()
-    reason = (request.form.get("reason") or "venta").strip()
-    valid_reasons = {key for key, _ in REASON_OPTIONS}
-    if reason not in valid_reasons:
-        reason = "venta"
 
+    reason, note = _parse_employee_reason_note()
     try:
         unit_price = float(request.form.get("unit_price") or product["price"] or 0)
     except ValueError:
@@ -422,46 +474,82 @@ def employee_deduct(product_id: int):
     def back():
         return redirect(url_for("main.employee_desk", q=next_q))
 
-    if qty < 1:
-        flash("Indica cuántas unidades vas a descontar.", "error")
-        return back()
-    if qty > product["stock"]:
-        flash(f"Solo hay {product['stock']} en stock de «{product['name']}».", "error")
-        return back()
-    if unit_price < 0:
-        flash("El precio de venta no puede ser negativo.", "error")
+    ok, message, _sale_total = _employee_apply_deduct(
+        product, qty, unit_price, reason, note
+    )
+    flash(f"Salida: {message}" if ok else message, "ok" if ok else "error")
+    return back()
+
+
+@bp.post("/empleado/descontar-lote")
+@employee_required
+def employee_deduct_batch():
+    next_q = (request.form.get("next_q") or "").strip()
+
+    def back():
+        return redirect(url_for("main.employee_desk", q=next_q))
+
+    raw = (request.form.get("items") or "").strip()
+    try:
+        items = json.loads(raw) if raw else []
+    except json.JSONDecodeError:
+        flash("No pude leer el lote. Volvé a armarlo.", "error")
         return back()
 
-    now = datetime.now(timezone.utc).isoformat()
-    next_stock = product["stock"] - qty
-    sale_total = unit_price * qty
-    execute(
-        "UPDATE products SET stock = ?, updated_at = ? WHERE id = ?",
-        (next_stock, now, product_id),
-    )
-    execute(
-        """
-        INSERT INTO stock_moves (
-            product_id, user_id, quantity, note, reason, source,
-            unit_price, sale_total, stock_after, created_at
-        ) VALUES (?, ?, ?, ?, ?, 'OWN', ?, ?, ?, ?)
-        """,
-        (
-            product_id,
-            session["user_id"],
-            qty,
-            note,
-            reason,
-            unit_price,
-            sale_total,
-            next_stock,
-            now,
-        ),
-    )
-    flash(
-        f"Salida: −{qty} «{product['name']}» por {format_cop(sale_total)}. Quedan {next_stock}.",
-        "ok",
-    )
+    if not isinstance(items, list) or not items:
+        flash("Seleccioná al menos una prenda para el lote.", "error")
+        return back()
+
+    reason, note = _parse_employee_reason_note()
+    if note:
+        note = f"[lote] {note}"
+    else:
+        note = "salida en lote"
+
+    lines_ok = []
+    lines_err = []
+    grand_total = 0.0
+    units_out = 0
+
+    for raw_item in items[:40]:
+        if not isinstance(raw_item, dict):
+            continue
+        try:
+            product_id = int(raw_item.get("id"))
+            qty = int(raw_item.get("qty") or 0)
+        except (TypeError, ValueError):
+            lines_err.append("Ítem inválido en el lote.")
+            continue
+
+        product = query_one("SELECT * FROM products WHERE id = ?", (product_id,))
+        if product is None:
+            lines_err.append(f"Prenda #{product_id} no encontrada.")
+            continue
+
+        try:
+            unit_price = float(raw_item.get("unit_price") if raw_item.get("unit_price") is not None else product["price"] or 0)
+        except (TypeError, ValueError):
+            unit_price = float(product["price"] or 0)
+
+        ok, message, sale_total = _employee_apply_deduct(
+            product, qty, unit_price, reason, note
+        )
+        if ok:
+            lines_ok.append(message)
+            grand_total += sale_total
+            units_out += qty
+        else:
+            lines_err.append(message)
+
+    if lines_ok:
+        flash(
+            f"Lote OK: {len(lines_ok)} prenda(s), −{units_out} und. Total {format_cop(grand_total)}.",
+            "ok",
+        )
+    if lines_err:
+        flash("Algunas no salieron: " + " · ".join(lines_err[:4]), "error")
+    if not lines_ok and not lines_err:
+        flash("El lote estaba vacío.", "error")
     return back()
 
 

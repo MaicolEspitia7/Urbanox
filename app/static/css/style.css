@@ -2808,6 +2808,7 @@ tr[data-inventory-row]:hover td {
 
 /* Employee desk simple */
 .employee-desk { padding-top: 1.6rem; padding-bottom: 3rem; }
+.employee-desk:has(.batch-dock:not([hidden])) { padding-bottom: 7.5rem; }
 .employee-wrap { max-width: 820px; }
 .employee-simple-head { margin-bottom: 1.1rem; }
 .employee-simple-head h1 {
@@ -2848,9 +2849,80 @@ tr[data-inventory-row]:hover td {
   box-shadow: var(--shadow);
 }
 .sale-card.is-empty { opacity: 0.65; }
+.sale-card.is-batched {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent), var(--shadow);
+}
 @media (min-width: 640px) {
   .sale-card { grid-template-columns: 128px minmax(0, 1fr); padding: 1rem; gap: 1.1rem; }
 }
+.sale-batch-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f7f8fa;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.sale-batch-toggle input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.sale-card.is-batched .sale-batch-toggle {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+  background: color-mix(in oklab, var(--accent) 10%, #fff);
+}
+.batch-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  border-top: 1px solid var(--line);
+  background: color-mix(in oklab, #0f1218 92%, transparent);
+  color: #f4f5f7;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.28);
+}
+.batch-dock-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem 1rem;
+  padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+}
+.batch-dock-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.85rem;
+  font-size: 0.92rem;
+}
+.batch-dock-copy strong { font-size: 1.05rem; }
+.batch-dock-total strong {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.batch-dock-actions {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+.batch-dock .btn-ghost {
+  color: #f4f5f7;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.batch-dock .btn-accent { min-height: 46px; }
 .sale-media {
   aspect-ratio: 4 / 5;
   border-radius: 12px;

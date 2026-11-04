@@ -471,6 +471,7 @@
       if (qtyInput) qtyInput.value = String(next);
       if (qtyLabel) qtyLabel.textContent = String(next);
       if (totalLabel) totalLabel.textContent = formatCop(unitPrice * next);
+      document.dispatchEvent(new CustomEvent("urbanox:qty-change", { detail: { form } }));
     };
 
     const syncAnnotateUi = () => {
@@ -558,6 +559,125 @@
   document.querySelectorAll("[data-annotate-form]").forEach((form) => {
     bindQtyForm(form, { isAnnotate: true });
   });
+
+  // Employee batch checkout (multi-item, one confirm)
+  const batchRoot = document.querySelector("[data-employee-batch]");
+  if (batchRoot) {
+    const batchForm = batchRoot.querySelector("[data-batch-form]");
+    const itemsInput = batchForm?.querySelector("[data-batch-items]");
+    const reasonInput = batchForm?.querySelector("[data-batch-reason]");
+    const noteInput = batchForm?.querySelector("[data-batch-note]");
+    const countEl = batchForm?.querySelector("[data-batch-count]");
+    const unitsEl = batchForm?.querySelector("[data-batch-units]");
+    const totalEl = batchForm?.querySelector("[data-batch-total]");
+    const clearBtn = batchForm?.querySelector("[data-batch-clear]");
+
+    const formatCop = (value) => `$ ${Math.round(value).toLocaleString("es-CO")}`;
+
+    const collectBatch = () => {
+      const items = [];
+      batchRoot.querySelectorAll("[data-sale-card].is-batched").forEach((card) => {
+        const form = card.querySelector("[data-sale-form]");
+        if (!form) return;
+        const id = Number(card.dataset.productId);
+        const qty = Number(form.querySelector("[data-qty-input]")?.value || 1);
+        const unitPrice = Number(
+          form.querySelector("[data-unit-price-input]")?.value ||
+            card.dataset.unitPrice ||
+            0
+        );
+        const stock = Number(card.dataset.stock || 0);
+        if (!id || qty < 1 || qty > stock) return;
+        items.push({
+          id,
+          qty,
+          unit_price: unitPrice,
+          name: card.dataset.productName || "",
+        });
+      });
+      return items;
+    };
+
+    const syncBatchDock = () => {
+      if (!batchForm) return;
+      const items = collectBatch();
+      const units = items.reduce((sum, item) => sum + item.qty, 0);
+      const total = items.reduce((sum, item) => sum + item.qty * item.unit_price, 0);
+      if (itemsInput) itemsInput.value = JSON.stringify(items);
+      if (countEl) {
+        countEl.textContent = `${items.length} prenda${items.length === 1 ? "" : "s"}`;
+      }
+      if (unitsEl) unitsEl.textContent = `${units} und.`;
+      if (totalEl) totalEl.textContent = formatCop(total);
+      batchForm.hidden = items.length === 0;
+    };
+
+    batchRoot.querySelectorAll("[data-batch-toggle]").forEach((toggle) => {
+      toggle.addEventListener("change", () => {
+        const card = toggle.closest("[data-sale-card]");
+        if (!card) return;
+        card.classList.toggle("is-batched", toggle.checked);
+        syncBatchDock();
+      });
+    });
+
+    document.addEventListener("urbanox:qty-change", (event) => {
+      const form = event.detail?.form;
+      if (!form || !batchRoot.contains(form)) return;
+      syncBatchDock();
+    });
+
+    clearBtn?.addEventListener("click", () => {
+      batchRoot.querySelectorAll("[data-batch-toggle]").forEach((toggle) => {
+        toggle.checked = false;
+        toggle.closest("[data-sale-card]")?.classList.remove("is-batched");
+      });
+      syncBatchDock();
+    });
+
+    batchForm?.addEventListener("submit", async (event) => {
+      if (batchForm.dataset.confirmReady === "1") {
+        delete batchForm.dataset.confirmReady;
+        return;
+      }
+      event.preventDefault();
+      const items = collectBatch();
+      if (!items.length) {
+        syncBatchDock();
+        return;
+      }
+
+      // Motivo/nota del primer ítem marcado (si abrió “no es venta”)
+      const firstCard = batchRoot.querySelector("[data-sale-card].is-batched");
+      const firstForm = firstCard?.querySelector("[data-sale-form]");
+      if (reasonInput) {
+        reasonInput.value = firstForm?.querySelector('select[name="reason"]')?.value || "venta";
+      }
+      if (noteInput) {
+        noteInput.value = firstForm?.querySelector('input[name="note"]')?.value || "";
+      }
+      if (itemsInput) itemsInput.value = JSON.stringify(items);
+
+      const units = items.reduce((sum, item) => sum + item.qty, 0);
+      const total = items.reduce((sum, item) => sum + item.qty * item.unit_price, 0);
+      const preview = items
+        .slice(0, 4)
+        .map((item) => `· ${item.name} ×${item.qty}`)
+        .join("\n");
+      const extra = items.length > 4 ? `\n· …y ${items.length - 4} más` : "";
+      const ok = await askConfirm({
+        title: "Confirmar lote",
+        message: `Vas a sacar ${items.length} prenda(s), ${units} und. por ${formatCop(total)}:\n${preview}${extra}`,
+        okLabel: "Sí, sacar todo",
+        tone: "ok",
+      });
+      if (!ok) return;
+      batchForm.dataset.confirmReady = "1";
+      batchForm.requestSubmit();
+    });
+
+    syncBatchDock();
+  }
 
   // Stagger cards
   if (!reduceMotion) {
