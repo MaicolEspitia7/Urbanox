@@ -49,8 +49,10 @@ class _PgConnection:
         return cur
 
     def executemany(self, sql: str, args_seq):
-        cur = self._conn.executemany(_adapt_sql(sql), args_seq)
-        return cur
+        sql = _adapt_sql(sql)
+        with self._conn.cursor() as cur:
+            cur.executemany(sql, args_seq)
+            return cur
 
     def executescript(self, script: str):
         with self._conn.cursor() as cur:
