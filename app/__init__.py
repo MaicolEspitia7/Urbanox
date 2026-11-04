@@ -33,6 +33,8 @@ def create_app() -> Flask:
     )
     app.config["SECRET_KEY"] = _resolve_secret_key(root)
     app.config["DATABASE"] = str(root / "urbanox.db")
+    # Si hay DATABASE_URL (Supabase/Render), se usa Postgres; si no, SQLite local.
+    app.config["DATABASE_URL"] = (os.environ.get("DATABASE_URL") or "").strip()
     app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB imágenes
     # Solo dígitos con código de país. Preferí Admin → Ajustes o env WHATSAPP_NUMBER.
     app.config["WHATSAPP_NUMBER"] = (os.environ.get("WHATSAPP_NUMBER") or "").strip()
