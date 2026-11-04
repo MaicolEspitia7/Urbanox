@@ -314,6 +314,17 @@ def _migrate_admin_roles(db) -> None:
     )
 
 
+def _sync_user_password(db, email: str, env_key: str) -> None:
+    """Si hay clave en entorno, actualiza el hash (útil tras deploys)."""
+    password = (os.environ.get(env_key) or "").strip()
+    if not password:
+        return
+    db.execute(
+        "UPDATE admins SET password_hash = ? WHERE email = ?",
+        (generate_password_hash(password), email),
+    )
+
+
 def seed_if_empty(db) -> None:
     now = datetime.now(timezone.utc).isoformat()
 
@@ -339,6 +350,7 @@ def seed_if_empty(db) -> None:
             "UPDATE admins SET role = COALESCE(NULLIF(role, ''), 'admin') WHERE id = ?",
             (admin["id"],),
         )
+        _sync_user_password(db, "admin@urbanox.com", "URBANOX_ADMIN_PASSWORD")
 
     employee = db.execute(
         "SELECT id FROM admins WHERE email = ?",
@@ -359,6 +371,8 @@ def seed_if_empty(db) -> None:
                 now,
             ),
         )
+    else:
+        _sync_user_password(db, "empleado@urbanox.com", "URBANOX_EMPLOYEE_PASSWORD")
 
     kero = db.execute(
         "SELECT id FROM admins WHERE email = ?",
@@ -382,6 +396,7 @@ def seed_if_empty(db) -> None:
             "UPDATE admins SET role = 'kero', name = ? WHERE id = ?",
             ("Proveedor Kero", kero["id"]),
         )
+        _sync_user_password(db, "kero@urbanox.com", "URBANOX_KERO_PASSWORD")
 
     demo_images = {
         "URB-CAM-001": "/static/img/products/camisa-oversize.jpg",
